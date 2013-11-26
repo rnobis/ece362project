@@ -18,6 +18,10 @@ char inchar(void);
 void outchar(char x);
 void fdisp();
 void sdisp();
+void UserSays();
+void SimonSays();
+void compare();
+int getPushButton();
 void shiftout(void);
 void lcdwait(void);
 void send_byte(char ch);
@@ -33,10 +37,13 @@ int yellpb	= 0;  // yellow pushbutton flag
 int greenpb	= 0;  // green pushbutton flag
 int prevpb	= 0;  // previous pushbutton state
 int runstp	= 0;  // game run/stop flag
-int onesec 	= 0;  //  one second flag
+int wrong   = 0;  // incorrect user input flag
+int ready	= 0;  // user ready flag
 int tenths	= 0;  // tenth of a second flag
-int onecnt	= 0;  // ONECNT (variable)
 int tencnt	= 0;  // TENCNT (variable)
+int random 	= 0;  // random number
+int Simon[] = [4,4,4,4]; //Simon random output
+int User[]  = [4,4,4,4]; //User input
 
 //;LCD COMMUNICATION BIT MASKS
 int RS = 0x04;     //;RS pin mask (PTT[2])
@@ -72,12 +79,10 @@ void  initializations(void) {
   COPCTL = 0x40   ; //COP off; RTI and COP stopped in BDM-mode
 
          
-//  Add additional port pin initializations here
+//SPI Initializations for LCD Output
   SPICR1  = 0x50; //initialize for master mode, interrupts off, CPOL=0, CPHA=0, slave select disabled
   SPICR2  = 0x00; //initializes for normal mode
-
-// Initialize the SPI to 6.25 MHz
-  SPIBR = 0x01;
+  SPIBR =   0x01; // Initialize the SPI to 6.25 MHz
 
 //ATD initializations for LED intensity
   ATDCTL2 = 0x80;
@@ -86,14 +91,15 @@ void  initializations(void) {
   ATDCTL5 = 0x00; //unsigned, left justified, input channel 0
 
 //PWM Initializations for LED intensity
-  PWME_PWME0 	= 1; //enables channel 0 clock
-  PWMPOL_PPOL0 	= 0; //sets channel 0 to negative polarity
-  PWMCAE_CAE0 	= 0; //sets channel 0 to left allignment
-  PWMCLK_PCLK0 	= 1; //sets channel 0 to clock SA
-  PWMPRCLK 	= 0x01;	//sets clock to 12 MHz
-  PWMSCLA	= 600;  //sets clock SA to 12 MHz/(2*600) = 10000 HZ    
-  PWMPER0 	= 0xFF;
-  PWMDTY0	= 0x00;			 		  			 		  		
+  PWME_PWME0 	= 1;     //enables channel 0 clock
+  PWMPOL_PPOL0 	= 0;     //sets channel 0 to negative polarity
+  PWMCAE_CAE0 	= 0;     //sets channel 0 to left allignment
+  PWMCLK_PCLK0 	= 1;     //sets channel 0 to clock SA
+  PWMPRCLK 		= 0x01;	 //sets clock to 12 MHz
+  PWMSCLA		= 600;   //sets clock SA to 12 MHz/(2*600) = 10000 Hz    
+  PWMPER0 		= 0xFF; 
+  PWMDTY0		= 0x00;			 
+ 		  			 		  		
 // Initialize digital I/O port pins
   DDRT = 0xFF;
   DDRM_DDRM4 = 1;
@@ -154,13 +160,22 @@ void main(void) {
   /* write your code here */
     if(tenths == 1)
       {
-         while(ATDSTAT0_SCF != 1){}
-	 PWMDTY0 = ATDDR0H;
+        while(ATDSTAT0_SCF != 1){}
+	 	PWMDTY0 = ATDDR0H;
       }
-
-
-
-
+	//Ask user to press the start button, outputs random LED output, asks user to enter their attempt
+	//output appropriate message, and update wait time if correct
+	if(runstp == 1)
+	  {
+		SimonSays();
+		UserSays();
+		compare();
+	  }
+	//Generate Game Over, ask user if they want to play again
+	if(wrong == 1)
+	  {
+		
+	  }
     
     _FEED_COP(); /* feeds the dog */
   } /* loop forever */
@@ -181,22 +196,26 @@ void main(void) {
 ;     leftpb (for PAD7 H -> L), rghtpb (for PAD6 H -> L)
 ;     Recall that pushbuttons are momentary contact closures to ground
 ;
-	 		  			
-
- 		  		
 ;***********************************************************************/
 interrupt 7 void RTI_ISR(void)
 {
   	// set CRGFLG bit 
   	CRGFLG = CRGFLG | 0x80; 
+	
+	random++;
+	if (random == 255)
+	{
+		random = 0;
+	}
+	
 
 }
 
 /***********************************************************************                       
 ;  TIM interrupt service routine
 ;
-;  Uses variable "onecnt" to track if one second has accumulated and
-;  sets "onesec" flag	
+;  Uses variable "tencnt" to track if one tenth of a second has 
+;  accumulated and sets "tenths" flag. Also use to update wait time.
 ;	 		  			 		  		
 ;***********************************************************************/
 interrupt 15 void TIM_ISR(void)
@@ -204,15 +223,99 @@ interrupt 15 void TIM_ISR(void)
   // set TFLG1 bit 
  	TFLG1 = TFLG1 | 0x80;  
   
-  onecnt++;
-  if(onecnt == 100)
+  tencnt++;
+  if(tencnt == 100)
     {
-       onesec = 1;
-       onecnt = 0;
+       tenths = 1;
+       tencnt = 0;
     }
 
 }
+//Function for generating the random LED output for the game Simon Says
+void SimonSays()
+{
+	int i = 0;
+	
+	//Fill array
+	while(i < 4)
+	{
+		Simon[i] = random % 4; 
+		//random = random / 4;   
+		i++;
+	}
+	
+	//Output array for user to see
+	while(i < 4)
+	{
+		if(Simon[i] == 0)
+		{
+			//Red LED on then off
+			//generate wait
+		}
+		if(Simon[i] == 1)
+		{
+			//Yellow LED on then off
+			//generate wait
+		}
+		if(Simon[i] == 2)
+		{
+			//Green LED on then off
+			//generate wait
+		}
+		if(Simon[i] == 3)
+		{
+			//Blue LED on then off
+			//generate wait
+		}
+		i++;
+	}		
+}
+//Keep track of buttons user inputs
+void UserSays()
+{	
+	int i = 0;
 
+	while(i < 4)
+	{
+		User[i] = getPushButton();
+		i++;
+	}
+}
+int getPushButton()
+{
+	if(redpb == 1)
+	{
+		return 0;
+	}
+	if(yellpb == 1)
+	{
+		return 1;
+	}
+	if(greenpb == 1)
+	{
+		return 2;
+	}
+	if(bluepb == 1)
+	{
+		return 3;
+	}
+}
+//Compares user and simon arrays
+void compare()
+{
+	int i;
+
+	while(i < 4)
+	{
+		if(Simon[i] != User[i])
+		{
+			wrong = 1;
+		}
+		i++;
+	}
+	//Coud add scoring function here if wrong == 0
+	
+}
 /***********************************************************************        
 ;                    
 ;  fdisp: Welcomes players and outputs selected difficulty       
