@@ -40,9 +40,15 @@ int runstp	= 0;  // game run/stop flag
 int wrong   = 0;  // incorrect user input flag
 int ready	= 0;  // user ready flag
 int tenths	= 0;  // tenth of a second flag
+int simon	= 0;  // flag for when simons turn begins
+int user 	= 0;  // flag for when users turn begins
+int simoncnt = 0; 
+int simonmax = 1000; // 
+int usercnt = 0;
+int usermax = 0; 
 int tencnt	= 0;  // TENCNT (variable)
 int random 	= 100;  // random number
-int wait 	= 2400000;  // length of time to wait before user can input
+int wait 	= ;  // length of time to wait before user can input
 int Simon[] = [4,4,4,4]; //Simon random output
 int User[]  = [4,4,4,4]; //User input
 
@@ -142,11 +148,8 @@ void  initializations(void) {
   TIE_C7I = 0;
   TC7 = 1500;
 
-//Initialize LED ports to active High as PWM will control brightness
-  MODRR_MODRR4 = 1;  //red LED
-  MODRR_MODRR5 = 1;  //yellow LED
-  MODRR_MODRR6 = 1;  //green LED
-  MODRR_MODRR7 = 1;  //blue LED
+//Initialize port T to PWM to control brightness
+  MODRR_MODRR0 = 1; 
 
 //initialize ATD ports as digital inputs
   ATDDIEN_IEN1 = 1; //start pb mapped to AN1
@@ -183,9 +186,11 @@ void main(void) {
 	  {
 		fdisp();
 		SimonSays();
+		simon = 0; //set simon flag back to zero
 		ready = 1;
 		fdisp();
 		UserSays();
+		user = 0;  //set user flag back to zero
 		ready = 0;
 		compare();
 		runstp = 0;
@@ -199,7 +204,7 @@ void main(void) {
 	  {
 		int i;
 		fdisp();
-		for(i = 0;i < 12000000,i++);
+		while(fivecnt<5000);
 		wrong = 0;
 	  }
     
@@ -274,6 +279,19 @@ interrupt 15 void TIM_ISR(void)
        tenths = 1;
        tencnt = 0;
     }
+  if(simon == 1)
+	{
+	   simoncnt++;
+	}
+  if(user == 1)
+	{
+	   usercnt++;
+	}
+  //counter for five seconds
+  if(wrong == 1)
+	{
+	   fivecnt++;
+	}
 
 }
 //Function for generating the random LED output for the game Simon Says
@@ -282,6 +300,9 @@ void SimonSays()
 	int i = 0;
 	int j = 0;
 	int k = 0;
+
+	//set simon flag
+	simon = 1;
 	
 	//Fill array
 	while(i < 4)
@@ -322,7 +343,8 @@ void SimonSays()
 			for(k=0;k < 24000;k++); //wait 10 ms
 			PTT_PTT7 = 1;
 		}
-		for(j=0;j < wait;j++);
+		while(simoncnt < simonmax);
+		simoncnt = 0;
 		i++;
 	}		
 }
@@ -331,6 +353,8 @@ void UserSays()
 {	
 	int i = 0;
 	int j = 0;
+	//set user flag
+	user = 1;
 
 	while(i < 4)
 	{
@@ -341,7 +365,6 @@ void UserSays()
 int getPushButton()
 {
 	int i = 0;
-	for(i=0;i<wait;i++); //wait
 	
 	if(redpb == 1)
 	{
