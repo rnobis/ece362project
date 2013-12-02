@@ -33,22 +33,29 @@ void chgline(char ch);
 void print_c(char ch);
 void pmsglcd(char ch[]);
 void delayGen(int length);
+int  randomGen();
 
 //  Variable declarations  	   			 		  			 		       
 int redpb	= 0;  // red pushbutton flag
 int bluepb	= 0;  // blue pushbutton flag
 int yellpb	= 0;  // yellow pushbutton flag
 int greenpb	= 0;  // green pushbutton flag
+int pb		= 0;  // keeps track of when one of the pushbuttons is pushed
 int prevpb	= 0;  // previous pushbutton state
 int runstp	= 0;  // game run/stop flag
 int wrong   = 0;  // incorrect user input flag
 int tenths	= 0;  // tenth of a second flag
 int tencnt	= 0;  // TENCNT (variable)
 int score   = 0;
+int Simon   = 0;  // flag set to track simon time
+int simoncnt = 0; // keeps track of simon time
+int User	= 0;  // flag set to track user time
+int usercnt = 0;  // keeps track of user time
 int random 	= 100;  // random number
 int Simon[4] = {5,5,5,5}; //Simon random output
 int User[4]  = {4,4,4,4}; //User input
 int delay   = 0;
+int difficulty = 0;
 
 //;LCD COMMUNICATION BIT MASKS
 int RS = 0x02;     //;RS pin mask (PTT[5])
@@ -215,11 +222,13 @@ void main(void) {
 	if(runstp == 1)
 	  {
 		simdisp();
-	  delayGen(2000);    
+	  	delayGen(2000);    
 		SimonSays();
+		Simon = 0; //end of simon function
 		udisp();
-    delayGen(2000);
+    	delayGen(2000);
 		UserSays();
+		User = 0; //end of user turn
 		compare();
 	  }
 	else
@@ -230,6 +239,7 @@ void main(void) {
 	if(wrong == 1)
 	  {
 		wrdisp();
+		sdisp();
 		delayGen(5000);
 		wrong = 0;
 		runstp = 0;
@@ -272,18 +282,22 @@ interrupt 7 void RTI_ISR(void)
 	if (PORTAD0_PTAD2 == 1)
 	{
 		redpb = 1;
+		pb = 1;
 	}
 	if (PORTAD0_PTAD3 == 1)
 	{
 		yellpb = 1;
+		pb = 1;
 	}
 	if (PORTAD0_PTAD4 == 1)
 	{
 		greenpb = 1;
+		pb = 1;
 	}
 	if (PORTAD0_PTAD5 == 1)
 	{
 		bluepb = 1;
+		pb = 1;
 	}
 	
 }
@@ -308,6 +322,14 @@ interrupt 15 void TIM_ISR(void)
     tenths = 1;
     tencnt = 0; 
   }
+  if(Simon == 1)
+  {
+	simoncnt++;
+  }
+  if(User == 1)
+  {
+	usercnt++;
+  }
 
 }
 //Function for generating specific delays
@@ -317,13 +339,17 @@ void delayGen(int length)
   while(delay<length);
   delay = 0;
 }
+//Function for generating random numbers between 0 and 3
+int randomGen()
+{
+}
 //Function for generating the random LED output for the game Simon Says
 void SimonSays()
 {
 
 	int i = 0;
 	int j = 0;
-	int k = 0;
+	Simon = 1; //set simon flag to keep track of time for function
 	
 	//Fill array
 	Simon[0] = 0;
@@ -361,7 +387,7 @@ void SimonSays()
 			delayGen(50);
 		  PWMDTY4 = 0x00;
 		}
-		delayGen(500);
+		delayGen(500 - difficulty);
 		j++;
 	}		
 	return;
@@ -371,14 +397,13 @@ void SimonSays()
 void UserSays()
 {	
 	int i = 0;
-	int j = 0;
+	User = 1;
 
 	while(i < 4)
 	{
 		User[i] = getPushButton();
 		i++;
 	}       
-	delayGen(1000);
 }
 int getPushButton()
 {
@@ -386,26 +411,31 @@ int getPushButton()
 	if(redpb == 1)
 	{
 		redpb = 0; //set redpb flag back to 0
+		pb = 0;    //set pb flag back to 0
 		return 0;
 	} 
 	else if(yellpb == 1)
 	{
 		yellpb = 0; //set yellpb flag back to 0
+		pb = 0;     //set pb flag back to 0
 		return 1;
 	} 
 	else if(greenpb == 1)
 	{
 		greenpb = 0; //set greenpb flag back to 0
+		pb = 0;      //set pb flag back to 0
 		return 2;
 	} 
 	else if(bluepb == 1)
 	{
 		bluepb = 0; //set bluepb flag back to 0
+		pb = 0;     //set pb flag back to 0
 		return 3;
 	}
 	else 
 	{
-	  return 4;
+	  	while(pb == 0); //wait until a pushbutton is pressed
+		return getPushButton();
 	}
 }
 //Compares user and simon arrays
@@ -423,8 +453,21 @@ void compare()
 		}
 		i++;
 	}
-	score += 10;
-	//Coud add scoring function here if wrong == 0
+	if(usercnt > simoncnt)
+	{
+		wrong = 1;
+	}
+	else
+	{
+		score += 10;
+		if(difficulty < 200)
+		{
+			difficulty += 10;
+		}		
+	}
+
+	usercnt  = 0;  //resets user time
+	simoncnt = 0;  //resets simon time
 	
 }
 /***********************************************************************        
@@ -441,8 +484,25 @@ void wrdisp()
 void udisp() 
 {
   char user[]		  = {'Y','o','u','r',' ','t','u','r','n',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char ready[]		  = {'R','e','a','d','y','?',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char ready1[]		  = {'R','e','a','d','y','.',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char ready2[]		  = {'R','e','a','d','y','.','.',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char ready3[]		  = {'R','e','a','d','y','.','.','.',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char go[]			  = {'G','o','!',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  
   chgline(LINE1);
   pmsglcd(user);
+  chgline(LINE2);
+  pmsglcd(ready);
+  delayGen(500);
+  pmsglcd(ready1);
+  delayGen(1000);
+  pmsglcd(ready2);
+  delayGen(1000);
+  pmsglcd(ready3);
+  delayGen(1000);
+  pmsglcd(go);
+  
 }
 void simdisp()
 {
@@ -460,6 +520,8 @@ void sdisp()
 {
   char score[]    = {'S','c','o','r','e',':',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
  
+  chgline(LINE2);
+  pmsglcd(score);
 }
 
 /***********************************************************************                              
