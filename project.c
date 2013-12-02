@@ -143,10 +143,10 @@ void  initializations(void) {
   TC7 = 1500;
 
 //Initialize LED ports to active High as PWM will control brightness
-  PTT_PTT4 = 1;  //red LED
-  PTT_PTT5 = 1;  //yellow LED
-  PTT_PTT6 = 1;  //green LED
-  PTT_PTT7 = 1;  //blue LED
+  MODRR_MODRR4 = 1;  //red LED
+  MODRR_MODRR5 = 1;  //yellow LED
+  MODRR_MODRR6 = 1;  //green LED
+  MODRR_MODRR7 = 1;  //blue LED
 
 //initialize ATD ports as digital inputs
   ATDDIEN_IEN1 = 1; //start pb mapped to AN1
@@ -172,8 +172,9 @@ void main(void) {
   /* write your code here */
     if(tenths == 1)
       {
+      	ATDCTL5 = 0x80; //Begin ATD conversion
         while(ATDSTAT0_SCF != 1){}
-	 	PWMDTY0 = ATDDR0H;
+	 	PWMDTY0 = ATDDR0L;
       }
 
 	//Ask user to press the start button, outputs random LED output, asks user to enter their attempt
