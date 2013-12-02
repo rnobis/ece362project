@@ -41,14 +41,15 @@ int wrong   = 0;  // incorrect user input flag
 int ready	= 0;  // user ready flag
 int tenths	= 0;  // tenth of a second flag
 int tencnt	= 0;  // TENCNT (variable)
-int random 	= 0;  // random number
+int random 	= 100;  // random number
+int wait 	= 2400000;  // length of time to wait before user can input
 int Simon[] = [4,4,4,4]; //Simon random output
 int User[]  = [4,4,4,4]; //User input
 
 //;LCD COMMUNICATION BIT MASKS
-int RS = 0x04;     //;RS pin mask (PTT[2])
-int RW = 0x08;     //;R/W pin mask (PTT[3])
-int LCDCLK  = 0x10;     //;LCD EN/CLK pin mask (PTT[4])
+int RS = 0x02;     //;RS pin mask (PTT[1])
+int RW = 0x04;     //;R/W pin mask (PTT[2])
+int LCDCLK  = 0x08;     //;LCD EN/CLK pin mask (PTT[3])
 
 //;LCD INSTRUCTION CHARACTERS
 int LCDON = 0x0F;     //;LCD initialization command
@@ -114,8 +115,8 @@ void  initializations(void) {
        ; - clear LCD (LCDCLR instruction)
        ; - wait for 2ms so that the LCD can wake up
 */
-  PTT_PTT4 = 1;
-  PTT_PTT3 = 0;
+  PTT_PTT3 = 1;
+  PTT_PTT2 = 0;
   send_i(LCDON);
   send_i(TWOLINE);
   send_i(LCDCLR);
@@ -140,8 +141,19 @@ void  initializations(void) {
   TIOS = 0x80;
   TIE_C7I = 0;
   TC7 = 1500;
- 
-	      
+
+//Initialize LED ports to active High as PWM will control brightness
+  PTT_PTT4 = 1;  //red LED
+  PTT_PTT5 = 1;  //yellow LED
+  PTT_PTT6 = 1;  //green LED
+  PTT_PTT7 = 1;  //blue LED
+
+//initialize ATD ports as digital inputs
+  ATDDIEN_IEN1 = 1; //start pb mapped to AN1
+  ATDDIEN_IEN2 = 1; //red pb mapped to AN2
+  ATDDIEN_IEN3 = 1; //yellow pb mapped to AN3
+  ATDDIEN_IEN4 = 1; //green pb mapped to AN4
+  ATDDIEN_IEN5 = 1;	//blue pb mapped to AN5
 }
 	 		  			 		  		
 /***********************************************************************
@@ -163,18 +175,30 @@ void main(void) {
         while(ATDSTAT0_SCF != 1){}
 	 	PWMDTY0 = ATDDR0H;
       }
+
 	//Ask user to press the start button, outputs random LED output, asks user to enter their attempt
 	//output appropriate message, and update wait time if correct
 	if(runstp == 1)
 	  {
+		fdisp();
 		SimonSays();
+		ready = 1;
+		fdisp();
 		UserSays();
+		ready = 0;
 		compare();
 	  }
-	//Generate Game Over, ask user if they want to play again
+	else
+	  {
+		fdisp();
+	  }
+	//Generate Game Over, wait five seconds, and then set flag back to zero
 	if(wrong == 1)
 	  {
-		
+		int i;
+		fdisp();
+		for(i = 0;i < 12000000,i++);
+		wrong = 0;
 	  }
     
     _FEED_COP(); /* feeds the dog */
@@ -190,10 +214,10 @@ void main(void) {
 ;
 ;  Initialized for 2.048 ms interrupt rate
 ;
-;  Samples state of pushbuttons (PAD7 = left, PAD6 = right)
+;  Samples state of pushbuttons (PAD1 = runstp, PAD2 = redpb, PAD3 = yellpb
+;  PAD4 = greenpb, PAD5 = yellpb)
 ;
 ;  If change in state from "high" to "low" detected, set pushbutton flag
-;     leftpb (for PAD7 H -> L), rghtpb (for PAD6 H -> L)
 ;     Recall that pushbuttons are momentary contact closures to ground
 ;
 ;***********************************************************************/
@@ -205,10 +229,29 @@ interrupt 7 void RTI_ISR(void)
 	random++;
 	if (random == 255)
 	{
-		random = 0;
+		random = 100;
+	}
+	if (PORTAD0_PTAD1 == 1)
+	{
+		runstp = 1;
+	}
+	if (PORTAD0_PTAD2 == 1)
+	{
+		redpb = 1;
+	}
+	if (PORTAD0_PTAD3 == 1)
+	{
+		yellpb = 1;
+	}
+	if (PORTAD0_PTAD4 == 1)
+	{
+		greenpb = 1;
+	}
+	if (PORTAD0_PTAD5 == 1)
+	{
+		bluepb = 1;
 	}
 	
-
 }
 
 /***********************************************************************                       
@@ -235,6 +278,8 @@ interrupt 15 void TIM_ISR(void)
 void SimonSays()
 {
 	int i = 0;
+	int j = 0;
+	int k = 0;
 	
 	//Fill array
 	while(i < 4)
@@ -249,24 +294,33 @@ void SimonSays()
 	{
 		if(Simon[i] == 0)
 		{
-			//Red LED on then off
-			//generate wait
+			//Red LED on then off (active low)
+			PTT_PTT4 = 0;
+			for(k=0;k < 24000;k++); //wait 10 ms
+			PTT_PTT4 = 1;
 		}
 		if(Simon[i] == 1)
 		{
-			//Yellow LED on then off
-			//generate wait
+			//Yellow LED on then off (active low)
+			PTT_PTT5 = 0;
+			for(k=0;k < 24000;k++); //wait 10 ms
+			PTT_PTT5 = 1;
 		}
 		if(Simon[i] == 2)
 		{
-			//Green LED on then off
-			//generate wait
+			//Green LED on then off (active low)
+			PTT_PTT6 = 0;
+			for(k=0;k < 24000;k++); //wait 10 ms
+			PTT_PTT6 = 1;
 		}
 		if(Simon[i] == 3)
 		{
-			//Blue LED on then off
-			//generate wait
+			//Blue LED on then off (active low)
+			PTT_PTT7 = 0;
+			for(k=0;k < 24000;k++); //wait 10 ms
+			PTT_PTT7 = 1;
 		}
+		for(j=0;j < wait;j++);
 		i++;
 	}		
 }
@@ -274,6 +328,7 @@ void SimonSays()
 void UserSays()
 {	
 	int i = 0;
+	int j = 0;
 
 	while(i < 4)
 	{
@@ -283,20 +338,27 @@ void UserSays()
 }
 int getPushButton()
 {
+	int i = 0;
+	for(i=0;i<wait;i++); //wait
+	
 	if(redpb == 1)
 	{
+		redpb = 0; //set redpb flag back to 0
 		return 0;
 	}
 	if(yellpb == 1)
 	{
+		yellpb = 0; //set yellpb flag back to 0
 		return 1;
 	}
 	if(greenpb == 1)
 	{
+		greenpb = 0; //set greenpb flag back to 0
 		return 2;
 	}
 	if(bluepb == 1)
 	{
+		bluepb = 0; //set bluepb flag back to 0
 		return 3;
 	}
 }
@@ -318,13 +380,42 @@ void compare()
 }
 /***********************************************************************        
 ;                    
-;  fdisp: Welcomes players and outputs selected difficulty       
+;  fdisp: Welcomes players and outputs selected difficulty, also asks
+;         user if they want to play again       
 ;
 ;***********************************************************************/
 void fdisp()
 {
- 
- 
+	char gameOver[] = {'G','a','m','e',' ','O','v','e','r','\0'};
+	char welcome[] = {'P','r','e','s','s',' ','S','T','A','R','T','\0'};
+	char Simon[]	= {'S','i','m','o','n',' ','s','a','y','s','\0'};
+	char user[]		= {'Y','o','u','r',' ','t','u','r','n','\0'};
+	
+	//changes to line 1, prints 'Game Over' message
+ 	if(wrong == 1)
+	{
+		chgline(LINE1);
+		pmsglcd(gameOver[]);
+	}
+	//changes to line 1, prints 'Press START'
+	if(runstp == 0)
+	{
+		chgline(LINE1);
+		pmsglcd(welcome[]);
+	}
+	//changes to line 1, prints 'Simon says', during simon's turn
+	if(runstp == 1)
+	{
+		chgline(LINE1);
+		pmsglcd(Simon[]);
+	}
+	//changes to line 1, prints 'Your turn', during user's turn
+	if(runstp == 1 && ready == 1)
+	{
+		chgline(LINE1);
+		pmsglcd(user[]);
+	}
+
 }
 /***********************************************************************        
 ;                    
@@ -361,7 +452,7 @@ void shiftout(char ch)
 void lcdwait()
 {
    int j;
-   for(j = 0; j <4800; j++);
+   for(j = 0; j < 4800; j++);
 }
 
 /***********************************************************************                              
@@ -373,8 +464,8 @@ void send_byte(char ch)
    shiftout(ch);
    //Pulse LCD clock line low->high
    //LCDCLK = 1;
-   PTT_PTT4 = 0;
-   PTT_PTT4 = 1;  
+   PTT_PTT3 = 0;
+   PTT_PTT3 = 1;  
      //Wait 2 ms for LCD to process data
    lcdwait();
 }
@@ -385,9 +476,9 @@ void send_i(char ch)
 {
         //Set the register select line low (instruction data)
         //Send byte
-  PTT_PTT2 = 0;
+  PTT_PTT1 = 0;
   send_byte(ch);
-  PTT_PTT2 = 1;
+  PTT_PTT1 = 1;
 }
 
 /***********************************************************************                        
