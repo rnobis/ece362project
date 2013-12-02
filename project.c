@@ -188,6 +188,7 @@ void main(void) {
 		UserSays();
 		ready = 0;
 		compare();
+		runstp = 0;
 	  }
 	else
 	  {
