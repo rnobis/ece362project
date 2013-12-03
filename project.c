@@ -1,7 +1,7 @@
 /***********************************************************************
 ; ECE 362 - Mini-Project
 ;***********************************************************************
-;	 	   		  		
+;                                                      
 ; Completed by: Ryan Nobis, Chris Liow, Tom Doddridge, Kyle 
 ;
 ;                             
@@ -21,6 +21,7 @@ void udisp();
 void simdisp();
 void weldisp();
 void sdisp();
+void cldisp();
 void UserSays();
 void SimonSays();
 void compare();
@@ -35,23 +36,23 @@ void pmsglcd(char ch[]);
 void delayGen(int length);
 int  randomGen();
 
-//  Variable declarations  	   			 		  			 		       
-int redpb	= 0;  // red pushbutton flag
-int bluepb	= 0;  // blue pushbutton flag
-int yellpb	= 0;  // yellow pushbutton flag
-int greenpb	= 0;  // green pushbutton flag
-int pb		= 0;  // keeps track of when one of the pushbuttons is pushed
-int prevpb	= 0;  // previous pushbutton state
-int runstp	= 0;  // game run/stop flag
+//  Variable declarations                                                                                                        
+int redpb        = 0;  // red pushbutton flag
+int bluepb        = 0;  // blue pushbutton flag
+int yellpb        = 0;  // yellow pushbutton flag
+int greenpb        = 0;  // green pushbutton flag
+int pb                = 0;  // keeps track of when one of the pushbuttons is pushed
+int prevpb        = 0;  // previous pushbutton state
+int runstp        = 0;  // game run/stop flag
 int wrong   = 0;  // incorrect user input flag
-int tenths	= 0;  // tenth of a second flag
-int tencnt	= 0;  // TENCNT (variable)
-int score   = 0;
-int Simon   = 0;  // flag set to track simon time
+int tenths        = 0;  // tenth of a second flag
+int tencnt        = 0;  // TENCNT (variable)
+int long score   = 0;
+int simonflag   = 0;  // flag set to track simon time
 int simoncnt = 0; // keeps track of simon time
-int User	= 0;  // flag set to track user time
+int userflag        = 0;  // flag set to track user time
 int usercnt = 0;  // keeps track of user time
-int random 	= 100;  // random number
+int random         = 100;  // random number
 int Simon[4] = {5,5,5,5}; //Simon random output
 int User[4]  = {4,4,4,4}; //User input
 int delay   = 0;
@@ -72,7 +73,7 @@ int CURMOV = 0xFE;     //;LCD cursor move instruction
 int LINE1 = 0x80;     //;LCD line 1 cursor position
 int LINE2 = 0xC0;     //;LCD line 2 cursor position
 
-	 	   		
+                                    
 /***********************************************************************
 Initializations
 ***********************************************************************/
@@ -102,14 +103,14 @@ void  initializations(void) {
   ATDCTL4 = 0x85; //8 bit mode
 
 //PWM Initializations for LCD intensity
-  PWME_PWME0 	= 1;     //enables channel 0 clock
-  PWMPOL_PPOL0 	= 0;     //sets channel 0 to negative polarity
-  PWMCAE_CAE0 	= 0;     //sets channel 0 to left allignment
-  PWMCLK_PCLK0 	= 1;     //sets channel 0 to clock SA
-  PWMPRCLK 		= 0x01;	 //sets clock to 12 MHz
-  PWMSCLA		= 6;   //sets clock SA to 12 MHz/(2*6) = 100000 Hz    
-  PWMPER0 		= 0xFF; 
-  PWMDTY0		= 0x00;			 
+  PWME_PWME0         = 1;     //enables channel 0 clock
+  PWMPOL_PPOL0         = 0;     //sets channel 0 to negative polarity
+  PWMCAE_CAE0         = 0;     //sets channel 0 to left allignment
+  PWMCLK_PCLK0         = 1;     //sets channel 0 to clock SA
+  PWMPRCLK                 = 0x01;         //sets clock to 12 MHz
+  PWMSCLA                = 6;   //sets clock SA to 12 MHz/(2*6) = 100000 Hz    
+  PWMPER0                 = 0xFF; 
+  PWMDTY0                = 0x00;                         
 //PWM Initializations for LED Intensity
   PWME_PWME1 = 1;
   PWME_PWME2 = 1;
@@ -132,11 +133,11 @@ void  initializations(void) {
   PWMPER2 = 0xFF;
   PWMPER3 = 0xFF;
   PWMPER4 = 0xFF;
-  PWMDTY1 = 0xFF;
+  PWMDTY1 = 0x00;
   PWMDTY2 = 0x00;
   PWMDTY3 = 0x00;
   PWMDTY4 = 0x00;
- 		  			 		  		
+                                                                              
 // Initialize digital I/O port pins
   DDRT = 0xFF;
 //Initializes Port M 4 and 5 to be outputs
@@ -159,8 +160,8 @@ void  initializations(void) {
   send_i(LCDCLR);
   lcdwait();
 
-	 	   			 		  			 		  		
-// Initialize RTI for 2.048 ms interrupt rate	
+                                                                                                                          
+// Initialize RTI for 2.048 ms interrupt rate        
   RTICTL = 0x1F;
   CRGINT = 0x80;
 
@@ -192,16 +193,16 @@ void  initializations(void) {
   ATDDIEN_IEN2 = 1; //red pb mapped to AN2
   ATDDIEN_IEN3 = 1; //yellow pb mapped to AN3
   ATDDIEN_IEN4 = 1; //green pb mapped to AN4
-  ATDDIEN_IEN5 = 1;	//blue pb mapped to AN5
+  ATDDIEN_IEN5 = 1;        //blue pb mapped to AN5
 }
-	 		  			 		  		
+                                                                                      
 /***********************************************************************
 Main
 ***********************************************************************/
 void main(void) {
-  	DisableInterrupts;
-	initializations(); 		  			 		  		
-	EnableInterrupts;
+          DisableInterrupts;
+        initializations();                                                                              
+        EnableInterrupts;
 
 
 
@@ -211,38 +212,40 @@ void main(void) {
   /* write your code here */
     if(tenths == 1)
       {
-      	ATDCTL5 = 0x80; //Begin ATD conversion
+              ATDCTL5 = 0x80; //Begin ATD conversion
         while(ATDSTAT0_SCF == 0){}
-	    	PWMDTY0 = ATDDR0L; //needs to be between 128 and 255 for LCD
-	    	PWMDTY1 = ATDDR0L; //needs to be 0 and 128 for LED's
+                    PWMDTY0 = ATDDR0L / 2 + 128; 
       }
 
-	//Ask user to press the start button, outputs random LED output, asks user to enter their attempt
-	//output appropriate message, and update wait time if correct
-	if(runstp == 1)
-	  {
-		simdisp();
-	  	delayGen(1000);    
-		SimonSays();
-		Simon = 0; //end of simon function
-		udisp();
-		UserSays();
-		User = 0; //end of user turn
-		compare();
-	  }
-	else
-	  {
-		weldisp();
-	  }
-	//Generate Game Over, wait five seconds, and then set flag back to zero
-	if(wrong == 1)
-	  {
-		wrdisp();
-		sdisp();
-		delayGen(5000);
-		wrong = 0;
-		runstp = 0;
-	  }    
+        //Ask user to press the start button, outputs random LED output, asks user to enter their attempt
+        //output appropriate message, and update wait time if correct
+        if(runstp == 1)
+          {
+                simdisp();
+                delayGen(1000);    
+                SimonSays();
+                simonflag = 0; //end of simon function
+                udisp();
+                UserSays();
+                userflag = 0; //end of user turn
+                delayGen(500);
+                compare();
+                cldisp();
+          }
+        else
+          {
+                weldisp();
+          }
+        //Generate Game Over, wait five seconds, and then set flag back to zero
+        if(wrong == 1)
+          {
+                wrdisp();
+                sdisp();
+                delayGen(5000);
+                cldisp();
+                wrong = 0;
+                runstp = 0;
+          }    
     
     _FEED_COP(); /* feeds the dog */
   } /* loop forever */
@@ -266,39 +269,48 @@ void main(void) {
 ;***********************************************************************/
 interrupt 7 void RTI_ISR(void)
 {
-  	// set CRGFLG bit 
-  	CRGFLG = CRGFLG | 0x80; 
-	
-	random ++;
-	if (random == 255)
-	{
-		random = 100;
-	}
-	if (PORTAD0_PTAD1 == 1)
-	{
-		runstp = 1;
-	}
-	if (PORTAD0_PTAD2 == 1)
-	{
-		redpb = 1;
-		pb = 1;
-	}
-	if (PORTAD0_PTAD3 == 1)
-	{
-		yellpb = 1;
-		pb = 1;
-	}
-	if (PORTAD0_PTAD4 == 1)
-	{
-		greenpb = 1;
-		pb = 1;
-	}
-	if (PORTAD0_PTAD5 == 1)
-	{
-		bluepb = 1;
-		pb = 1;
-	}
-	
+          // set CRGFLG bit 
+          CRGFLG = CRGFLG | 0x80; 
+        
+        
+        random ++;
+        if (random == 255)
+        {
+                random = 100;
+        }
+        if (PORTAD0_PTAD1 == 1)
+        {
+                runstp = 1;
+        }
+        if (PORTAD0_PTAD2 == 1)
+        {
+          if(prevpb == 0) {
+                redpb = 1;
+                pb = 1;
+          }
+        }
+        if (PORTAD0_PTAD3 == 1)
+        {
+          if(prevpb == 0) {
+                yellpb = 1;
+                pb = 1;
+          }
+        }
+        if (PORTAD0_PTAD4 == 1)
+        {
+          if(prevpb == 0) {
+                greenpb = 1;
+                pb = 1;
+          }
+        }
+        if (PORTAD0_PTAD5 == 1)
+        {
+          if(prevpb == 0) {
+                bluepb = 1;
+                pb = 1;
+          }
+        }
+        prevpb = PORTAD0_PTAD2 | PORTAD0_PTAD3 | PORTAD0_PTAD4 | PORTAD0_PTAD5;       
 }
 
 /***********************************************************************                       
@@ -306,12 +318,12 @@ interrupt 7 void RTI_ISR(void)
 ;
 ;  Uses variable "tencnt" to track if one tenth of a second has 
 ;  accumulated and sets "tenths" flag. Also use to update wait time.
-;	 		  			 		  		
+;                                                                                      
 ;***********************************************************************/
 interrupt 15 void TIM_ISR(void)
 {
   // set TFLG1 bit 
- 	TFLG1 = TFLG1 | 0x80;  
+         TFLG1 = TFLG1 | 0x80;  
   
   tencnt++;
   delay++;
@@ -321,13 +333,13 @@ interrupt 15 void TIM_ISR(void)
     tenths = 1;
     tencnt = 0; 
   }
-  if(Simon == 1)
+  if(simonflag == 1)
   {
-	simoncnt++;
+        simoncnt++;
   }
-  if(User == 1)
+  if(userflag == 1)
   {
-	usercnt++;
+        usercnt++;
   }
 
 }
@@ -346,127 +358,128 @@ int randomGen()
 void SimonSays()
 {
 
-	int i = 0;
-	int j = 0;
-	Simon = 1; //set simon flag to keep track of time for function
-	
-	//Fill array
-	Simon[0] = 0;
-	Simon[1] = 1;
-	Simon[2] = 2;
-	Simon[3] = 3;
-	//Output array for user to see
-	while(j < 4)
-	{
-		if(Simon[j] == 0)
-		{
-			//Red LED on then off (active high)
-			PWMDTY1 = ATDDR0L;
-			delayGen(50);
-			PWMDTY1 = 0x00;
-		} 
-		else if(Simon[j] == 1)
-		{
-			//Yellow LED on then off (active high)
-			PWMDTY2 = ATDDR0L;
-			delayGen(50);
-			PWMDTY2 = 0x00;
-		} 
-		else if(Simon[j] == 2)
-		{
-			//Green LED on then off (active high)
-			PWMDTY3 = ATDDR0L;
-			delayGen(50);
-			PWMDTY3 = 0x00;
-		} 
-		else if(Simon[j] == 3)
-		{
-			//Blue LED on then off (active high)
-			PWMDTY4 = ATDDR0L;
-			delayGen(50);
-		  PWMDTY4 = 0x00;
-		}
-		delayGen(500 - difficulty);
-		j++;
-	}		
-	return;
+        int i = 0;
+        int j = 0;
+        simonflag = 1; //set simon flag to keep track of time for function
+        
+        //Fill array
+        for(i=0;i<4;i++) 
+        {
+          Simon[i] = random % 4;
+          random = random / 4;
+        }
+
+        //Output array for user to see
+        while(j < 4)
+        {
+                if(Simon[j] == 0)
+                {
+                        //Red LED on then off (active high)
+                        PWMDTY1 = ATDDR0L / 5;
+                        delayGen(100);
+                        PWMDTY1 = 0x00;
+                } 
+                else if(Simon[j] == 1)
+                {
+                        //Yellow LED on then off (active high)
+                        PWMDTY2 = ATDDR0L / 5;
+                        delayGen(100);
+                        PWMDTY2 = 0x00;
+                } 
+                else if(Simon[j] == 2)
+                {
+                        //Green LED on then off (active high)
+                        PWMDTY3 = ATDDR0L /5;
+                        delayGen(100);
+                        PWMDTY3 = 0x00;
+                } 
+                else if(Simon[j] == 3)
+                {
+                        //Blue LED on then off (active high)
+                        PWMDTY4 = ATDDR0L / 5;
+                        delayGen(100);
+                  PWMDTY4 = 0x00;
+                }
+                delayGen(1000 - difficulty);
+                j++;
+        }                
+        return;
 }
 
 //Keep track of buttons user inputs
 void UserSays()
-{	
-	int i = 0;
-	User = 1;
+{        
+        int i = 0;
+        userflag = 1;
 
-	while(i < 4)
-	{
-		User[i] = getPushButton();
-		i++;
-	}       
+        while(i < 4)
+        {
+                User[i] = getPushButton();
+                i++;
+        }       
 }
 int getPushButton()
 {
-	
-	if(redpb == 1)
-	{
-		redpb = 0; //set redpb flag back to 0
-		pb = 0;    //set pb flag back to 0
-		return 0;
-	} 
-	else if(yellpb == 1)
-	{
-		yellpb = 0; //set yellpb flag back to 0
-		pb = 0;     //set pb flag back to 0
-		return 1;
-	} 
-	else if(greenpb == 1)
-	{
-		greenpb = 0; //set greenpb flag back to 0
-		pb = 0;      //set pb flag back to 0
-		return 2;
-	} 
-	else if(bluepb == 1)
-	{
-		bluepb = 0; //set bluepb flag back to 0
-		pb = 0;     //set pb flag back to 0
-		return 3;
-	}
-	else 
-	{
-	  	while(pb == 0); //wait until a pushbutton is pressed
-		return getPushButton();
-	}
+        
+        if(redpb == 1)
+        {
+                redpb = 0; //set redpb flag back to 0
+                pb = 0;    //set pb flag back to 0
+                return 0;
+        } 
+        else if(yellpb == 1)
+        {
+                yellpb = 0; //set yellpb flag back to 0
+                pb = 0;     //set pb flag back to 0
+                return 1;
+        } 
+        else if(greenpb == 1)
+        {
+                greenpb = 0; //set greenpb flag back to 0
+                pb = 0;      //set pb flag back to 0
+                return 2;
+        } 
+        else if(bluepb == 1)
+        {
+                bluepb = 0; //set bluepb flag back to 0
+                pb = 0;     //set pb flag back to 0
+                return 3;
+        }
+        else 
+        {
+                while(pb == 0); //wait until a pushbutton is pressed
+                return getPushButton();
+        }
 }
 //Compares user and simon arrays
 void compare()
 {
-	int i = 0;
-	
-	wrong = 1;
-	while(i < 4)
-	{
-		if(Simon[i] != User[i])
-		{
-			wrong = 1;
-			return;
-		}
-		i++;
-	}
-	if(usercnt > simoncnt)
-	{
-		wrong = 1;
-	}
-	else
-	{
-		score += 10;
-		if(difficulty < 200)
-		{
-			difficulty += 10;
-		}		
-	}
+        int i = 0;
+        
+        while(i < 4)
+        {
+                if(Simon[i] != User[i])
+                {
+                        wrong = 1;
+                        return;
+                }
+                i++;
+        }
+        if(usercnt > simoncnt)
+        {
+                wrong = 1;
+        }   
+        else
+        {
+                score = score + 10;
+                if(difficulty < 700)
+                {
+                        difficulty = difficulty + 50;
+                }                
+        }   
 
-	usercnt  = 0;  //resets user time
-	simoncnt = 0;  //resets simon time	
+        usercnt  = 0;  //resets user time
+        simoncnt = 0;  //resets simon time        
 }
 /***********************************************************************        
 ;                    
@@ -475,52 +488,80 @@ void compare()
 ;***********************************************************************/
 void wrdisp()
 {
-	char gameOver[] = {'G','a','m','e',' ','O','v','e','r',' ',' ',' ',' ',' ',' ',' ','\0'};
-	chgline(LINE1);
-	pmsglcd(gameOver);
+        char gameOver[] = {'G','a','m','e',' ','O','v','e','r',' ',' ',' ',' ',' ',' ',' ','\0'};
+        chgline(LINE1);
+        pmsglcd(gameOver);
 }
 void udisp() 
 {
-  char user[]		  = {'Y','o','u','r',' ','t','u','r','n',' ',' ',' ',' ',' ',' ',' ','\0'};
-  char ready[]		  = {'R','e','a','d','y','?',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
-  char ready1[]		  = {'R','e','a','d','y','.',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
-  char ready2[]		  = {'R','e','a','d','y','.','.',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
-  char ready3[]		  = {'R','e','a','d','y','.','.','.',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
-  char go[]			  = {'G','o','!',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char user[]                  = {'Y','o','u','r',' ','t','u','r','n',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char ready[]                  = {'R','e','a','d','y',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char ready1[]                  = {'R','e','a','d','y','.',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char ready2[]                  = {'R','e','a','d','y','.','.',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char ready3[]                  = {'R','e','a','d','y','.','.','.',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  char go[]                          = {'G','o','!',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
   
   chgline(LINE1);
   pmsglcd(user);
   chgline(LINE2);
   pmsglcd(ready);
   delayGen(500);
+  chgline(LINE2);
   pmsglcd(ready1);
   delayGen(1000);
+  chgline(LINE2);
   pmsglcd(ready2);
   delayGen(1000);
+  chgline(LINE2);
   pmsglcd(ready3);
   delayGen(1000);
+  chgline(LINE2);
   pmsglcd(go);
   
 }
 void simdisp()
 {
-  char Simon[]	  = {'S','i','m','o','n',' ','s','a','y','s',' ',' ',' ',' ',' ',' ','\0'};
+  char Simon[]          = {'S','i','m','o','n',' ','s','a','y','s',' ',' ',' ',' ',' ',' ','\0'};
   chgline(LINE1);
   pmsglcd(Simon);
 }
 void weldisp()
 {
-	char welcome[]  = {'P','r','e','s','s',' ','S','T','A','R','T',' ',' ',' ',' ',' ','\0'};
-	chgline(LINE1);
-	pmsglcd(welcome);
+        char welcome[]  = {'P','r','e','s','s',' ','S','T','A','R','T',' ',' ',' ',' ',' ','\0'};
+        chgline(LINE1);
+        pmsglcd(welcome);
 }
 void sdisp()
 {
-  char score[]    = {'S','c','o','r','e',':',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
- 
+  char scoreDisp[]    = {'S','c','o','r','e',':',' '};
+  int long divisor = 100000000;
+  int i = 0;
+  int scoreStart = 0xC7;
+  
   chgline(LINE2);
-  pmsglcd(score);
+  pmsglcd(scoreDisp); 
+  chgline(scoreStart);
+  
+  while(i < 9)
+  {
+    print_c((score / divisor) + 48);
+    
+    score = score % divisor;
+    divisor = divisor / 10;
+    i++;
+  }    
+  
 }
+void cldisp() 
+{
+  char clear[] = {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\0'};
+  
+  chgline(LINE1);
+  pmsglcd(clear);
+  chgline(LINE2);
+  pmsglcd(clear);
+}
+  
 
 /***********************************************************************                              
 ;  shiftout: Transmits the contents of register A to external shift 
@@ -534,7 +575,7 @@ void shiftout(char ch)
   int i;
   //read the SPTEF bit, continue if bit is 1
   while(SPISR_SPTEF == 0);
-	//write data to SPI data register
+        //write data to SPI data register
   SPIDR = ch;
   //wait for 30 cycles for SPI data to shift out 
   for(i = 0; i < 30; i++);
@@ -608,6 +649,3 @@ void pmsglcd(char ch[])
   }
 
 }
-
-
-
