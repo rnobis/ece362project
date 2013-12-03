@@ -222,11 +222,10 @@ void main(void) {
 	if(runstp == 1)
 	  {
 		simdisp();
-	  	delayGen(2000);    
+	  	delayGen(1000);    
 		SimonSays();
 		Simon = 0; //end of simon function
 		udisp();
-    	delayGen(2000);
 		UserSays();
 		User = 0; //end of user turn
 		compare();
@@ -441,7 +440,7 @@ int getPushButton()
 //Compares user and simon arrays
 void compare()
 {
-	int i;
+	int i = 0;
 	
 	wrong = 1;
 	while(i < 4)
@@ -467,8 +466,7 @@ void compare()
 	}
 
 	usercnt  = 0;  //resets user time
-	simoncnt = 0;  //resets simon time
-	
+	simoncnt = 0;  //resets simon time	
 }
 /***********************************************************************        
 ;                    
