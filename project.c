@@ -1,11 +1,60 @@
 /***********************************************************************
-; ECE 362 - Mini-Project
+; ECE 362 - Mini-Project C Source File - Fall 2013                    
 ;***********************************************************************
-;                                                      
-; Completed by: Ryan Nobis, Chris Liow, Tom Doddridge, Kyle Fesmire
+;	 	   			 		  			 		  		
+; Team ID: 36
 ;
-;                             
+; Project Name: Digital Simon Says
+;
+; Team Members:
+;
+;   - Team/Doc Leader: Kyle Fesmire	      Signature: ______________________
+;   
+;   - Software Leader: Ryan Nobis	      Signature: ______________________
+;
+;   - Interface Leader: Tom Doddridge     Signature: ______________________
+;
+;   - Peripheral Leader: Chris Liow    	  Signature: ______________________
+;
+;
+; Academic Honesty Statement:  In signing above, we hereby certify that we 
+; are the individuals who created this HC(S)12 source file and that we have
+; not copied the work of any other student (past or present) while completing 
+; it. We understand that if we fail to honor this agreement, we will receive 
+; a grade of ZERO and be subject to possible disciplinary action.
+;
 ;***********************************************************************
+;
+; The objective of this Mini-Project is to create a Simon says games
+; that generates random patterns for the user to mimic. Keeps track of
+; the user score, and makes the game progressively harder. Also allows
+; user to adjust display and LED brightness.
+;
+;***********************************************************************
+;
+; List of project-specific success criteria (functionality that will be
+; demonstrated):
+;
+; 1. Random Pattern Generation
+;
+; 2. User input, and comparison to generated pattern
+;
+; 3. Scoring based on time, and ability to mimic
+;
+; 4. Ability to control LED and LCD brightness
+;
+;
+;***********************************************************************
+;
+;  Date code started: November 19, 2013
+;
+;  Update history (add an entry every time a significant change is made):
+;
+;  Date: < ? >  Name: < ? >   Update: < ? >
+;
+;  Date: < ? >  Name: < ? >   Update: < ? >
+;
+;  Date: < ? >  Name: < ? >   Update: < ? >
 ;
 ;
 ;***********************************************************************/
