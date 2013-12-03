@@ -2,7 +2,7 @@
 ; ECE 362 - Mini-Project
 ;***********************************************************************
 ;                                                      
-; Completed by: Ryan Nobis, Chris Liow, Tom Doddridge, Kyle 
+; Completed by: Ryan Nobis, Chris Liow, Tom Doddridge, Kyle Fesmire
 ;
 ;                             
 ;***********************************************************************
