@@ -1,0 +1,11 @@
+Quick Notes
+-For pushbuttons
+--Inputs are AN1-AN5
+--Make sure to put the input to the MICRO through a 1k Ohm resistor (Brown,Black,Read)
+
+-For LED's
+--Can use small Red LED's with no resistor
+--Can use color coded LED's with 330 Ohm resistor (Orange,Orange, Brown)
+--Long end goes to MICRO, short end goes to ground
+
+(Both sets of Resistors should be on small breadboard
