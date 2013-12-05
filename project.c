@@ -294,6 +294,7 @@ void main(void) {
                 cldisp();
                 wrong = 0;
                 runstp = 0;
+                difficulty = 0;
           }    
     
     _FEED_COP(); /* feeds the dog */
