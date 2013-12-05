@@ -461,6 +461,12 @@ void UserSays()
 {        
         int i = 0;
         userflag = 1;
+        
+        redpb = 0;     //reset pb flags to 0 before getting input
+        yellpb = 0;
+        greenpb = 0;
+        bluepb = 0;
+        pb = 0;
 
         while(i < 4)
         {
